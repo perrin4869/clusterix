@@ -10,3 +10,5 @@ deploy:
     tags: true
 after_script:
 - npm run coveralls
+services:
+- redis-server

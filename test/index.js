@@ -1,66 +1,73 @@
 import Clusterix from '../src';
 import Promise from 'bluebird';
+import Redis from 'ioredis';
 
 import sinon from 'sinon';
 import { expect } from 'chai';
+import { install as pdel } from 'redis-pdel';
 
 describe('clusterix', () => {
-  const timeout = 500;
-  const instancesCount = 3;
-  let cluster = null;
+  const interval = 100;
+  const pollInterval = interval;
+  const heartbeatInterval = interval;
+  const timeout = interval * 2;
+  const redis = new Redis({ keyPrefix: 'clusterix:test:' });
 
-  async function initializeTestNodes() {
-    cluster = new Clusterix();
+  pdel(redis);
 
-    for (let i = 0; i < instancesCount; i++) {
-      cluster.initializeNode(`node${i + 1}`);
+  async function initializeTestNodes(count = 3) {
+    let clusterInstances = [];
+
+    for (let i = 0; i < count; i++) {
+      const cluster = new Clusterix(redis, { pollInterval, timeout });
+      await cluster.initializeNode(`node${i + 1}`, { heartbeatInterval });
+      clusterInstances = clusterInstances.concat([cluster]);
     }
 
-    expect(await cluster.nodes).to.deep.equal([
-      'node1',
-      'node2',
-      'node3',
-    ]);
+    return clusterInstances;
   }
 
-  function clearTestNodes() {
-    cluster.clearAll();
+  function killTestNodes(clusterInstances) {
+    clusterInstances.forEach(cluster => cluster.killNode());
   }
 
-  beforeEach(() => initializeTestNodes());
-  afterEach(() => clearTestNodes());
+  beforeEach(async () => await redis.pdel('*'));
+  after(() => redis.disconnect());
 
-  it('should detect new node', async function() {
-    const node = 'node4';
-    const spy = sinon.spy();
-    cluster.on('new node', spy);
-    cluster.initializeNode(node);
+  it('should properly create cluster of 3 nodes', async function() {
+    const clusterInstances = await initializeTestNodes();
 
-    await Promise.delay(timeout);
+    for (const cluster of clusterInstances) {
+      expect(await cluster.nodes).to.deep.equal([
+        'node1',
+        'node2',
+        'node3',
+      ]);
+    }
 
-    expect(spy.calledOnce).to.equal(true);
-    expect(spy.firstCall.args).to.deep.equal([node]);
-    expect(await cluster.nodes).to.deep.equal([
-      'node1',
-      'node2',
-      'node3',
-      'node4',
-    ]);
+    killTestNodes(clusterInstances);
   });
 
   it('should detect dead node', async function() {
-    const node = 'node1';
+    const node = 'node3';
     const spy = sinon.spy();
-    cluster.on('node down', spy);
-    cluster.killNode(node);
+    const clusterInstances = await initializeTestNodes();
+    clusterInstances[0].on('node down', spy);
+    clusterInstances[1].on('node down', spy);
+    clusterInstances[2].killNode();
 
-    await Promise.delay(timeout);
+    await Promise.delay(timeout * 2);
 
     expect(spy.calledOnce).to.equal(true);
     expect(spy.firstCall.args).to.deep.equal([node]);
-    expect(await cluster.nodes).to.deep.equal([
-      'node2',
-      'node3',
-    ]);
+
+    for (const cluster of clusterInstances) {
+      expect(await cluster.nodes).to.deep.equal([
+        'node1',
+        'node2',
+      ]);
+    }
+
+    killTestNodes(clusterInstances);
   });
 });

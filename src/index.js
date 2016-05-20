@@ -1,28 +1,75 @@
-import Promise from 'bluebird';
 import { EventEmitter } from 'events';
+import os from 'os';
 
-export default class Clusterix extends EventEmitter {
-  constructor() {
+const defaultNodeId = `${os.hostname()}:${process.env.PORT}`;
+
+export default class extends EventEmitter {
+  constructor(redis, { id, pollInterval = 500, timeout = 1000 }) {
     super();
 
-    this._nodes = [];
+    this.id = id;
+    this.redis = redis;
+    this.timeout = timeout;
+
+    this.pollTimer = setInterval(this.poll, pollInterval);
   }
 
   get nodes() {
-    return Promise.resolve(this._nodes);
+    return this.redis.hkeys(this.redisKey('heartbeats'));
   }
 
-  initializeNode(id) {
-    this._nodes = this._nodes.concat([id]);
-    this.emit('new node', id);
+  redisKey(key) {
+    return (this.id && this.id.length) ?
+      `${this.id}:${key}` :
+      key;
   }
 
-  killNode(id) {
-    this._nodes = this._nodes.filter(node => node !== id);
-    this.emit('node down', id);
+  initializeNode(nodeId = defaultNodeId, { heartbeatInterval = 500 }) {
+    if (heartbeatInterval > this.timeout) throw new Error('Interval should be less than timeout');
+
+    return this.redis.hset(this.redisKey('heartbeats'), nodeId, Date.now())
+    .then(initialized => {
+      if (initialized) { // key was added
+        this.nodeId = nodeId;
+        this.heartbeatTimer = setInterval(this.heartbeat, heartbeatInterval);
+      } else { // initialized === 0, key already existed
+        throw new Error('Node with this id already existed');
+      }
+    });
   }
 
-  clearAll() {
-    this._nodes = [];
+  heartbeat = () => (
+    this.redis.hset(this.redisKey('heartbeats'), this.nodeId, Date.now())
+    .then(initialized => {
+      if (initialized) this.emit('reconnect');
+    })
+  )
+
+  nodesHeartbeats() {
+    return this.redis.hgetall(this.redisKey('heartbeats'))
+    .then(
+      nodes => Object.keys(nodes).map(id => ({
+        id,
+        heartbeat: parseInt(nodes[id], 10),
+      }))
+    );
+  }
+
+  poll = () => (
+    this.nodesHeartbeats().each(node => {
+      if (Date.now() - node.heartbeat > this.timeout) {
+        this.redis.hdel(this.redisKey('heartbeats'), node.id)
+        .then(deleted => {
+          if (deleted) this.emit('node down', node.id);
+        });
+      }
+    })
+  )
+
+  killNode() {
+    clearTimeout(this.heartbeatTimer);
+    clearTimeout(this.pollTimer);
+    this.heartbeatTimer = null;
+    this.pollTimer = null;
   }
 }
