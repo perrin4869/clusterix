@@ -26,7 +26,7 @@ gulp.task('test', ['lint'], () => (
 gulp.task('build', ['test'], () => (
   gulp.src(src)
   .pipe(babel())
-  .pipe(gulp.dest('dist'))
+  .pipe(gulp.dest('lib'))
 ));
 
 gulp.task('watch', () => {

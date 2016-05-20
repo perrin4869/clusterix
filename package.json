@@ -2,7 +2,7 @@
   "name": "clusterix",
   "version": "0.0.0",
   "description": "Node module for cluster node management",
-  "main": "index.js",
+  "main": "lib/index.js",
   "scripts": {
     "test": "gulp test",
     "build": "gulp build",
@@ -11,7 +11,7 @@
     "prepublish": "npm run build"
   },
   "files": [
-    "dist"
+    "lib"
   ],
   "repository": {
     "type": "git",
