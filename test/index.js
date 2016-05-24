@@ -28,7 +28,7 @@ describe('clusterix', () => {
   }
 
   function killTestNodes(clusterInstances) {
-    clusterInstances.forEach(cluster => cluster.killNode());
+    clusterInstances.forEach(cluster => cluster._clearTimeout());
   }
 
   beforeEach(async () => await redis.pdel('*'));
@@ -54,7 +54,7 @@ describe('clusterix', () => {
     const clusterInstances = await initializeTestNodes();
     clusterInstances[0].on('node down', spy);
     clusterInstances[1].on('node down', spy);
-    clusterInstances[2].killNode();
+    clusterInstances[2]._clearTimeout();
 
     await Promise.delay(timeout * 2);
 

@@ -66,7 +66,7 @@ export default class extends EventEmitter {
     })
   )
 
-  killNode() {
+  _clearTimeout() {
     clearTimeout(this.heartbeatTimer);
     clearTimeout(this.pollTimer);
     this.heartbeatTimer = null;
