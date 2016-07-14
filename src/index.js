@@ -4,7 +4,11 @@ import os from 'os';
 const defaultNodeId = `${os.hostname()}:${process.env.PORT}`;
 
 export default class extends EventEmitter {
-  constructor(redis, { id, pollInterval = 500, timeout = 1000 }) {
+  constructor(redis, {
+    id = null,
+    pollInterval = 500,
+    timeout = 1000,
+  } = {}) {
     super();
 
     this.id = id;
