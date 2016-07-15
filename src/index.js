@@ -28,7 +28,7 @@ export default class extends EventEmitter {
       key;
   }
 
-  initializeNode(nodeId = defaultNodeId, { heartbeatInterval = 500 }) {
+  initializeNode(nodeId = defaultNodeId, { heartbeatInterval = 500 } = {}) {
     if (heartbeatInterval > this.timeout) throw new Error('Interval should be less than timeout');
 
     return this.redis.hset(this.redisKey('heartbeats'), nodeId, Date.now())
