@@ -18,14 +18,14 @@ export default class extends EventEmitter {
     this.pollTimer = setInterval(this.poll, pollInterval);
   }
 
-  get nodes() {
-    return this.redis.hkeys(this.redisKey('heartbeats'));
-  }
-
-  redisKey(key) {
+  #redisKey(key) {
     return (this.id && this.id.length)
       ? `${this.id}:${key}`
       : key;
+  }
+
+  get nodes() {
+    return this.redis.hkeys(this.redisKey('heartbeats'));
   }
 
   initializeNode(nodeId = defaultNodeId(), { heartbeatInterval = 500 } = {}) {

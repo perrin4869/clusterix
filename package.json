@@ -42,10 +42,11 @@
   "devDependencies": {
     "@babel/core": "^7.7.7",
     "@babel/plugin-proposal-class-properties": "^7.7.4",
+    "@babel/plugin-proposal-private-methods": "^7.7.4",
     "@babel/preset-env": "^7.7.7",
     "@babel/register": "^7.7.7",
     "@istanbuljs/nyc-config-babel": "^3.0.0",
-    "babel-eslint": "^10.0.3",
+    "babel-eslint": "^11.0.0-beta.2",
     "babel-plugin-istanbul": "^6.0.0",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
