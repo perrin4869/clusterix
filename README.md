@@ -78,6 +78,10 @@ Type: `integer`, default: `500`
 
 Determines how often we send a heartbeat to redis. Has to be smaller than the `timeout` passed to the constructor.
 
+#### dispose()
+
+Clears all open handles (interval timeouts).
+
 #### nodes
 
 Type: `Promise<Array<string>>`
@@ -87,8 +91,6 @@ Returns the ids of all the nodes currently in the cluster
 ####
 
 ### Tests
-
-Requires Node 6 to run:
 
 ```js
 npm test
