@@ -1,6 +1,6 @@
 {
   "name": "clusterix",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Node module for cluster node management",
   "type": "commonjs",
   "main": "commonjs/entry.js",
