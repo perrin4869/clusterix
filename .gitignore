@@ -8,4 +8,5 @@ node_modules
 npm-debug.log
 
 # Build
-lib
+commonjs/entry.js
+esm/entry.js

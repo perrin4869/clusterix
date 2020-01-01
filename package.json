@@ -2,18 +2,27 @@
   "name": "clusterix",
   "version": "0.1.0",
   "description": "Node module for cluster node management",
-  "main": "lib/index.js",
+  "type": "commonjs",
+  "main": "commonjs/entry.js",
+  "exports": {
+    ".": {
+      "require": "./commonjs/entry.js",
+      "default": "./esm/entry.mjs"
+    }
+  },
+  "module": "./esm/entry.mjs",
   "scripts": {
     "lint": "eslint 'src/*.js' 'test/*.js'",
     "pretest": "npm run lint",
     "test": "mocha",
-    "build": "babel src -d lib",
+    "build": "rollup -c rollup.config.js",
     "cover": "nyc npm test",
     "coveralls": "npm run cover && nyc report --reporter=text-lcov | coveralls",
     "prepare": "npm run build"
   },
   "files": [
-    "lib"
+    "cjs",
+    "esm"
   ],
   "repository": {
     "type": "git",
@@ -31,7 +40,6 @@
   "homepage": "https://github.com/perrin4869/clusterix#readme",
   "dependencies": {},
   "devDependencies": {
-    "@babel/cli": "^7.7.7",
     "@babel/core": "^7.7.7",
     "@babel/plugin-proposal-class-properties": "^7.7.4",
     "@babel/preset-env": "^7.7.7",
@@ -52,6 +60,8 @@
     "mocha": "^6.2.2",
     "nyc": "^15.0.0",
     "redis-pdel": "^1.0.3",
+    "rollup": "^1.27.14",
+    "rollup-plugin-babel": "^4.3.3",
     "sinon": "^8.0.2",
     "sinon-chai": "^3.4.0"
   }
