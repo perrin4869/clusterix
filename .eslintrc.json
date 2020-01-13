@@ -2,7 +2,7 @@
   "extends": "airbnb-base",
   "parser": "babel-eslint",
   "overrides": [{
-    "files": ["test/**/*.js"],
+    "files": ["test/**/*.cjs"],
     "extends": ["plugin:mocha/recommended"],
     "plugins": ["mocha"],
     "env": {

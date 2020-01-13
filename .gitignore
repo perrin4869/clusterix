@@ -9,4 +9,4 @@ npm-debug.log
 
 # Build
 commonjs/entry.js
-esm/entry.mjs
+esm/entry.js

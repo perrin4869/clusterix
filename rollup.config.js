@@ -15,6 +15,6 @@ export default [{
 }, {
   external,
   input,
-  output: { file: 'esm/entry.mjs', format: 'esm' },
+  output: { file: 'esm/entry.js', format: 'esm' },
   plugins,
 }];

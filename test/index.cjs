@@ -1,11 +1,11 @@
-import Redis from 'ioredis';
+const Redis = require('ioredis');
 
-import { spy } from 'sinon';
-import { expect } from 'chai';
-import delay from 'delay';
-import { install as pdel } from 'redis-pdel';
+const { spy } = require('sinon');
+const { expect } = require('chai');
+const delay = require('delay');
+const { install: pdel } = require('redis-pdel');
 
-import Clusterix from '../src';
+const Clusterix = require('..');
 
 describe('clusterix', () => {
   let clusterInstances;
