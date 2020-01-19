@@ -74,6 +74,8 @@ How often we poll the server for dead nodes in milliseconds.
 
 ##### timeout
 
+Type: `integer`, default: `1000`
+
 The number of milliseconds before a node is considered down.
 
 #### initializeNode()
