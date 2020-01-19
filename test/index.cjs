@@ -19,7 +19,16 @@ describe('clusterix', () => {
   pdel(redis);
 
   const initializeTestNodes = (count = 3) => [...Array(count).keys()].map(
-    (i) => new Clusterix(redis, { pollInterval, timeout }).initializeNode(`node${i + 1}`, { heartbeatInterval }),
+    (i) => {
+      const node = new Clusterix(redis, {
+        pollInterval,
+        timeout,
+        heartbeatInterval,
+        nodeId: `node${i + 1}`,
+      });
+
+      return node.initializeNode().then(() => node);
+    },
   );
 
   beforeEach(() => redis.pdel('*'));
@@ -34,6 +43,40 @@ describe('clusterix', () => {
       'node2',
       'node3',
     ]));
+  });
+
+  it('should throw when initializing two nodes with the same id', async () => {
+    clusterInstances = await Promise.all(initializeTestNodes());
+
+    return expect(new Clusterix(redis, {
+      pollInterval,
+      timeout,
+      heartbeatInterval,
+      nodeId: 'node1',
+    }).initializeNode()).to.be.rejectedWith(Error, 'Duplicate node sending heartbeats');
+  });
+
+  it('should detect node down while initializing', async () => {
+    const node = new Clusterix(redis, {
+      pollInterval,
+      timeout,
+      heartbeatInterval,
+      nodeId: 'node1',
+    });
+    await node.initializeNode();
+    node.dispose();
+
+    const onNodeDown = spy();
+    const node2 = new Clusterix(redis, {
+      pollInterval,
+      timeout,
+      heartbeatInterval,
+      nodeId: 'node1',
+    });
+    node2.on('node down', onNodeDown);
+    await node2.initializeNode();
+    expect(onNodeDown).to.have.been.calledOnceWithExactly('node1');
+    node2.dispose();
   });
 
   it('should detect dead node', async () => {

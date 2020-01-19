@@ -1,21 +1,26 @@
 import { EventEmitter } from 'events';
 import os from 'os';
+import delay from 'delay';
 
 const defaultNodeId = () => `${os.hostname()}:${process.env.PORT}`;
 
 export default class extends EventEmitter {
   constructor(redis, {
     id = null,
+    nodeId = defaultNodeId(),
+    heartbeatInterval = 500,
     pollInterval = 500,
     timeout = 1000,
   } = {}) {
     super();
 
-    this.id = id;
     this.redis = redis;
-    this.timeout = timeout;
 
-    this.pollTimer = setInterval(this.poll, pollInterval);
+    this.id = id;
+    this.nodeId = nodeId;
+    this.heartbeatInterval = heartbeatInterval;
+    this.pollInterval = pollInterval;
+    this.timeout = timeout;
   }
 
   get nodes() {
@@ -28,28 +33,34 @@ export default class extends EventEmitter {
       : key;
   }
 
-  initializeNode(nodeId = defaultNodeId(), { heartbeatInterval = 500 } = {}) {
-    if (heartbeatInterval > this.timeout) throw new Error('Interval should be less than timeout');
+  initializeNode() {
+    if (this.heartbeatInterval > this.timeout) throw new Error('Heartbeats should be more frequent than the timeout');
 
-    return this.redis.hset(this.redisKey('heartbeats'), nodeId, Date.now())
-      .then((initialized) => {
-        if (initialized) { // key was added
-          this.nodeId = nodeId;
-          this.heartbeatTimer = setInterval(this.heartbeat, heartbeatInterval);
+    const timestamp = Date.now();
+    return this.heartbeat(timestamp)
+      .then(async (initialized) => {
+        if (!initialized) {
+          // Test if another node is sending heartbeats as this node
+          await delay(this.heartbeatInterval);
+          if (await this.lastTimestamp() > timestamp) {
+            throw new Error('Duplicate node sending heartbeats');
+          }
 
-          return this;
+          // This node went down without proper cleanup
+          this.emit('node down', this.nodeId);
         }
 
-        // initialized === 0, key already existed
-        throw new Error('Node with this id already existed');
+        this.heartbeatTimer = setInterval(this.heartbeat, this.heartbeatInterval);
+        this.pollTimer = setInterval(this.poll, this.pollInterval);
       });
   }
 
-  heartbeat = () => (
-    this.redis.hset(this.redisKey('heartbeats'), this.nodeId, Date.now())
-      .then((initialized) => {
-        if (initialized) this.emit('reconnect');
-      })
+  lastTimestamp = () => (
+    this.redis.hget(this.redisKey('heartbeats'), this.nodeId)
+  )
+
+  heartbeat = (timestamp = Date.now()) => (
+    this.redis.hset(this.redisKey('heartbeats'), this.nodeId, timestamp)
   )
 
   poll = () => (

@@ -40,7 +40,7 @@ After you kill one on the processes, for instance, `node3`, either `node1` or `n
 
 ### class Clusterix extends EventEmitter
 
-#### new Clusterix(redis, { id, pollInterval, timeout })
+#### new Clusterix(redis, { id, nodeId, heartbeatInterval, pollInterval, timeout })
 
 ##### redis
 
@@ -54,18 +54,6 @@ Type: `string`, optional, default: `''`
 
 The identifier for the cluster, can remain empty if using only one cluster (usually that's the case).
 
-##### pollInterval
-
-Type: `integer`, default: `500`
-
-How often we poll the server for dead nodes in milliseconds.
-
-##### timeout
-
-The number of milliseconds before a node is considered down.
-
-#### initializeNode(nodeId, { heartbeatInterval })
-
 ##### nodeId
 
 Type: `string`, default: `${os.hostname()}:${process.env.PORT}`
@@ -78,7 +66,29 @@ Type: `integer`, default: `500`
 
 Determines how often we send a heartbeat to redis. Has to be smaller than the `timeout` passed to the constructor.
 
+##### pollInterval
+
+Type: `integer`, default: `500`
+
+How often we poll the server for dead nodes in milliseconds.
+
+##### timeout
+
+The number of milliseconds before a node is considered down.
+
+#### initializeNode()
+
+Type: `Promise<undefined | Error>`
+
+Starts polling for dead nodes and sending heartbeats to redis. 
+
+If another node is sending heartbeats under the same `nodeId`, it gets rejected with an `Error`.
+
+If heartbeats are found on redis for this same node, but no other node is sending heartbeats, a `node down` event is emitted.
+
 #### dispose()
+
+Type: `void`
 
 Clears all open handles (interval timeouts).
 
