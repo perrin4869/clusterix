@@ -1,8 +1,11 @@
 import { EventEmitter } from 'events';
 import os from 'os';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import delay from 'delay';
 
 const defaultNodeId = () => `${os.hostname()}:${process.env.PORT}`;
+const lua = readFileSync(join(__dirname, './poll.lua'), 'utf8');
 
 export default class extends EventEmitter {
   constructor(redis, {
@@ -14,6 +17,10 @@ export default class extends EventEmitter {
   } = {}) {
     super();
 
+    redis.defineCommand('__clusterix__poll', {
+      numberOfKeys: 1,
+      lua,
+    });
     this.redis = redis;
 
     this.id = id;
@@ -64,12 +71,11 @@ export default class extends EventEmitter {
   )
 
   poll = () => (
-    this.redis.hgetall(this.redisKey('heartbeats')).then(
-      (heartbeats) => Promise.all(Object.keys(heartbeats)
-        .filter((nodeid) => Date.now() - parseInt(heartbeats[nodeid], 10) > this.timeout)
-        .map((nodeid) => this.redis.hdel(this.redisKey('heartbeats'), nodeid)
-          .then((deleted) => deleted && this.emit('node down', nodeid)))),
-    )
+    this.redis.__clusterix__poll( // eslint-disable-line no-underscore-dangle
+      this.redisKey('heartbeats'),
+      Date.now(),
+      this.timeout,
+    ).then((nodes) => nodes.map((nodeid) => this.emit('node down', nodeid)))
   )
 
   dispose() {

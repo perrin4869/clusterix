@@ -46,7 +46,8 @@ After you kill one on the processes, for instance, `node3`, either `node1` or `n
 
 Type: `object`
 
-Instance of a redis client (tested with [ioredis](https://github.com/luin/ioredis)) used to store heartbeats. Should be completely setup with a key prefix.
+Instance of [ioredis](https://github.com/luin/ioredis) used to store heartbeats. Should have an open connection to the redis server when calling `initializeNode`. Lua scripting features of `ioredis` are used to define a command polls redis for each node's heartbeat, under the name `__clusterix__poll`.
+[node\_redis](https://github.com/NodeRedis/node_redis) is not supported. This is because of the lack of built in Promise support on redis commands, and ease of lua commands usage with `ioredis`.
 
 ##### id
 
