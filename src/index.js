@@ -8,6 +8,36 @@ const defaultNodeId = () => `${os.hostname()}:${process.env.PORT}`;
 const lua = readFileSync(join(__dirname, './poll.lua'), 'utf8');
 
 export default class extends EventEmitter {
+  #id
+
+  get id() {
+    return this.#id;
+  }
+
+  #nodeId
+
+  get nodeId() {
+    return this.#nodeId;
+  }
+
+  #heartbeatInterval
+
+  get heartbeatInterval() {
+    return this.#heartbeatInterval;
+  }
+
+  #pollInterval
+
+  get pollInterval() {
+    return this.#pollInterval;
+  }
+
+  #timeout
+
+  get timeout() {
+    return this.#timeout;
+  }
+
   constructor(redis, {
     id = null,
     nodeId = defaultNodeId(),
@@ -23,33 +53,27 @@ export default class extends EventEmitter {
     });
     this.redis = redis;
 
-    this.id = id;
-    this.nodeId = nodeId;
-    this.heartbeatInterval = heartbeatInterval;
-    this.pollInterval = pollInterval;
-    this.timeout = timeout;
+    this.#id = id;
+    this.#nodeId = nodeId;
+    this.#heartbeatInterval = heartbeatInterval;
+    this.#pollInterval = pollInterval;
+    this.#timeout = timeout;
   }
 
   get nodes() {
-    return this.redis.hkeys(this.redisKey('heartbeats'));
-  }
-
-  redisKey(key) {
-    return (this.id && this.id.length)
-      ? `${this.id}:${key}`
-      : key;
+    return this.redis.hkeys(this.#redisKey('heartbeats'));
   }
 
   initializeNode() {
     if (this.heartbeatInterval > this.timeout) throw new Error('Heartbeats should be more frequent than the timeout');
 
     const timestamp = Date.now();
-    return this.heartbeat(timestamp)
+    return this.#heartbeat(timestamp)
       .then(async (initialized) => {
         if (!initialized) {
           // Test if another node is sending heartbeats as this node
           await delay(this.heartbeatInterval);
-          if (await this.lastTimestamp() > timestamp) {
+          if (await this.#lastTimestamp() > timestamp) {
             throw new Error('Duplicate node sending heartbeats');
           }
 
@@ -57,26 +81,10 @@ export default class extends EventEmitter {
           this.emit('node down', this.nodeId);
         }
 
-        this.heartbeatTimer = setInterval(this.heartbeat, this.heartbeatInterval);
-        this.pollTimer = setInterval(this.poll, this.pollInterval);
+        this.heartbeatTimer = setInterval(this.#heartbeat, this.heartbeatInterval);
+        this.pollTimer = setInterval(this.#poll, this.pollInterval);
       });
   }
-
-  lastTimestamp = () => (
-    this.redis.hget(this.redisKey('heartbeats'), this.nodeId)
-  )
-
-  heartbeat = (timestamp = Date.now()) => (
-    this.redis.hset(this.redisKey('heartbeats'), this.nodeId, timestamp)
-  )
-
-  poll = () => (
-    this.redis.__clusterix__poll( // eslint-disable-line no-underscore-dangle
-      this.redisKey('heartbeats'),
-      Date.now(),
-      this.timeout,
-    ).then((nodes) => nodes.map((nodeid) => this.emit('node down', nodeid)))
-  )
 
   dispose() {
     clearTimeout(this.heartbeatTimer);
@@ -85,4 +93,24 @@ export default class extends EventEmitter {
     this.heartbeatTimer = null;
     this.pollTimer = null;
   }
+
+  #redisKey = (key) => ((this.id && this.id.length)
+    ? `${this.id}:${key}`
+    : key);
+
+  #lastTimestamp = () => (
+    this.redis.hget(this.#redisKey('heartbeats'), this.nodeId)
+  )
+
+  #heartbeat = (timestamp = Date.now()) => (
+    this.redis.hset(this.#redisKey('heartbeats'), this.nodeId, timestamp)
+  )
+
+  #poll = () => (
+    this.redis.__clusterix__poll( // eslint-disable-line no-underscore-dangle
+      this.#redisKey('heartbeats'),
+      Date.now(),
+      this.timeout,
+    ).then((nodes) => nodes.map((nodeid) => this.emit('node down', nodeid)))
+  )
 }
