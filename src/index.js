@@ -1,13 +1,13 @@
-import { EventEmitter } from 'events';
-import os from 'os';
-import { readFileSync } from 'fs';
-import { join } from 'path';
-import delay from 'delay';
+const { EventEmitter } = require('events');
+const { hostname } = require('os');
+const { readFileSync } = require('fs');
+const { join } = require('path');
+const delay = require('delay');
 
-const defaultNodeId = () => `${os.hostname()}:${process.env.PORT}`;
+const defaultNodeId = () => `${hostname()}:${process.env.PORT}`;
 const lua = readFileSync(join(__dirname, './poll.lua'), 'utf8');
 
-export default class extends EventEmitter {
+module.exports = class extends EventEmitter {
   #id
 
   get id() {
@@ -113,4 +113,4 @@ export default class extends EventEmitter {
       this.timeout,
     ).then((nodes) => nodes.map((nodeid) => this.emit('node down', nodeid)))
   )
-}
+};

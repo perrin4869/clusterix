@@ -2,27 +2,18 @@
   "name": "clusterix",
   "version": "1.0.0",
   "description": "Node module for cluster node management",
-  "type": "module",
-  "main": "commonjs/entry.js",
-  "exports": {
-    ".": {
-      "require": "./commonjs/entry.js",
-      "default": "./esm/entry.mjs"
-    }
-  },
-  "module": "./esm/entry.mjs",
+  "main": "dist/index.js",
   "scripts": {
-    "lint": "eslint 'src/*.js' 'test/*.cjs'",
-    "build": "rollup -c rollup.config.js",
-    "pretest": "npm run lint && npm run build",
-    "test": "mocha test/index.cjs",
+    "build": "babel src -d dist -s",
+    "lint": "eslint 'src/*.js' 'test/*.js'",
+    "pretest": "npm run build && npm run lint",
+    "test": "mocha",
     "cover": "nyc npm test",
     "coveralls": "npm run cover && nyc report --reporter=text-lcov | coveralls",
     "prepare": "npm run build"
   },
   "files": [
-    "cjs",
-    "esm"
+    "dist"
   ],
   "repository": {
     "type": "git",
@@ -42,30 +33,27 @@
     "delay": "^4.3.0"
   },
   "devDependencies": {
-    "@babel/core": "^7.8.3",
-    "@babel/plugin-proposal-class-properties": "^7.8.3",
-    "@babel/plugin-proposal-private-methods": "^7.8.3",
-    "@babel/preset-env": "^7.8.3",
-    "@babel/register": "^7.8.3",
+    "@babel/cli": "^7.8.4",
+    "@babel/core": "^7.9.6",
+    "@babel/plugin-syntax-class-properties": "^7.8.3",
+    "@babel/register": "^7.9.0",
     "@istanbuljs/nyc-config-babel": "^3.0.0",
-    "babel-eslint": "^10.0.3",
+    "babel-eslint": "^11.0.0-beta.2",
     "babel-plugin-istanbul": "^6.0.0",
     "babel-plugin-static-fs": "^3.0.0",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
-    "coveralls": "^3.0.9",
+    "coveralls": "^3.1.0",
     "env-test": "^1.0.0",
     "eslint": "^6.8.0",
-    "eslint-config-airbnb-base": "^14.0.0",
-    "eslint-plugin-import": "^2.20.0",
-    "eslint-plugin-mocha": "^6.2.2",
-    "ioredis": "^4.14.1",
-    "mocha": "^7.0.0",
-    "nyc": "^15.0.0",
+    "eslint-config-airbnb-base": "^14.1.0",
+    "eslint-plugin-import": "^2.20.2",
+    "eslint-plugin-mocha": "^6.3.0",
+    "ioredis": "^4.16.3",
+    "mocha": "^7.1.2",
+    "nyc": "^15.0.1",
     "redis-pdel": "^1.0.3",
-    "rollup": "^1.29.0",
-    "rollup-plugin-babel": "^4.3.3",
-    "sinon": "^8.1.0",
-    "sinon-chai": "^3.4.0"
+    "sinon": "^9.0.2",
+    "sinon-chai": "^3.5.0"
   }
 }
